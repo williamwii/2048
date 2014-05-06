@@ -5,39 +5,32 @@ var LEFT    = 3;
 
 function GameSolver(gameManager) {
     this.gameManager = gameManager;
-    this.searchDepth = 0;
     this.solve();
 }
 
 GameSolver.prototype.solve = function () {
     var self = this;
     window.setInterval(function() {
-        self.gameManager.move(self.nextMove(self.gameManager.grid));
+        var grid = self.gameManager.grid.serialize();
+        self.gameManager.move(self.nextMove(grid.cells));
     }, 100);
 }
 
 // Calculate for the next best move
 GameSolver.prototype.nextMove = function (grid) {
-    var up = this.move(this.cloneGrid(grid), UP);
-    var right = this.move(this.cloneGrid(grid), RIGHT);
-    var down = this.move(this.cloneGrid(grid), DOWN);
-    var left = this.move(this.cloneGrid(grid), LEFT);
+    var paths = [];
+    paths.push({grid: this.move(grid, UP), action: [UP]});
+    paths.push({grid: this.move(grid, RIGHT), action: [RIGHT]});
+    paths.push({grid: this.move(grid, DOWN), action: [DOWN]});
+    paths.push({grid: this.move(grid, LEFT), action: [LEFT]});
 
-    var upFree = this.freeSpaces(up);
-    var rightFree = this.freeSpaces(right);
-    var downFree = this.freeSpaces(down);
-    var leftFree = this.freeSpaces(left);
+    var self = this;
+    paths = _.shuffle(paths);
+    var max = _.max(paths, function(p) {
+        return self.freeSpaces(p.grid);
+    });
 
-    var action = parseInt(Math.random() * 4) % 4;
-    if (!(upFree==rightFree==downFree==leftFree)) {
-        var list = _.shuffle([{action: UP, state:up},
-                            {action: RIGHT, state:right},
-                            {action: DOWN, state:down},
-                            {action: LEFT, state:left}]);
-        var max = _.max(list, this.freeSpaces);
-        action = max.action;
-    }
-    return action;
+    return max.action.shift();
 }
 
 GameSolver.prototype.freeSpaces = function (grid) {
