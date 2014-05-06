@@ -5,6 +5,7 @@ var LEFT    = 3;
 
 function GameSolver(gameManager) {
     this.gameManager = gameManager;
+    this.searchDepth = 5;
     this.solve();
 }
 
@@ -13,24 +14,39 @@ GameSolver.prototype.solve = function () {
     window.setInterval(function() {
         var grid = self.gameManager.grid.serialize();
         self.gameManager.move(self.nextMove(grid.cells));
-    }, 100);
+    }, 500);
 }
 
 // Calculate for the next best move
 GameSolver.prototype.nextMove = function (grid) {
     var paths = [];
-    paths.push({grid: this.move(grid, UP), action: [UP]});
-    paths.push({grid: this.move(grid, RIGHT), action: [RIGHT]});
-    paths.push({grid: this.move(grid, DOWN), action: [DOWN]});
-    paths.push({grid: this.move(grid, LEFT), action: [LEFT]});
+    paths.push({grid: this.move(grid, UP), action: UP});
+    paths.push({grid: this.move(grid, RIGHT), action: RIGHT});
+    paths.push({grid: this.move(grid, DOWN), action: DOWN});
+    paths.push({grid: this.move(grid, LEFT), action: LEFT});
 
-    var self = this;
+    for (var i=1; i<=this.searchDepth; i++) {
+        var length = Math.pow(4,i);
+        for (var j=0; j<length; j++) {
+            var path = paths.shift();
+            paths.push({grid: this.move(path.grid, UP), action: path.action});
+            paths.push({grid: this.move(path.grid, RIGHT), action: path.action});
+            paths.push({grid: this.move(path.grid, DOWN), action: path.action});
+            paths.push({grid: this.move(path.grid, LEFT), action: path.action});
+        }
+    }
+
     paths = _.shuffle(paths);
-    var max = _.max(paths, function(p) {
+    var max = this.findBest(paths);
+
+    return max.action;
+}
+
+GameSolver.prototype.findBest = function (paths) {
+    var self = this;
+    return _.max(paths, function(p) {
         return self.freeSpaces(p.grid);
     });
-
-    return max.action.shift();
 }
 
 GameSolver.prototype.freeSpaces = function (grid) {
