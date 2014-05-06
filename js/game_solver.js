@@ -60,7 +60,8 @@ GameSolver.prototype.cloneGrid = function (grid) {
         var col = grid[i];
         var newCol = []
         for (var j=0; j<col.length; j++) {
-            if (col[j] == null) newCol.push(null);
+            if (col[j] == null)
+                newCol.push(null);
             else {
                 var newPos = {x: col[j].position.x, y: col[j].position.y};
                 var newTile = {position: newPos, value: col[j].value};
