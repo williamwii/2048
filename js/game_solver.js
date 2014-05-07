@@ -14,7 +14,7 @@ GameSolver.prototype.solve = function () {
     window.setInterval(function() {
         var grid = self.gameManager.grid.serialize();
         self.gameManager.move(self.nextMove(grid.cells));
-    }, 500);
+    }, 100);
 }
 
 // Calculate for the next best move
@@ -52,21 +52,33 @@ GameSolver.prototype.findBest = function (paths) {
     });
     
     var maxAction = -1;
-    var maxFreeSpace = -1;
+    var maxScore = -1;
     for (var action in pathGroups) {
         var group = pathGroups[action];
-        var freeSpace = 0;
+        var score = 0;
         for (var j=0; j<group.length; j++) {
-            freeSpace += this.freeSpaces(group[j].grid);
+            score += this.freeSpaces(group[j].grid) / 16 + this.maxValue(group[j].grid) / 2048;
         }
 
-        if (freeSpace > maxFreeSpace) {
-            maxFreeSpace = freeSpace;
-            maxAction = parseInt(action);
+        if (score > maxScore) {
+            maxScore = score;
+            maxAction = action;
         }
     }
     
     return maxAction;
+}
+
+GameSolver.prototype.maxValue = function (grid) {
+    var maxVal = 0;
+    for (var i=0; i<grid.length; i++) {
+        var col = grid[i];
+        for (var j=0; j<col.length; j++) {
+            if (col[j] > maxVal) maxVal = col[j];
+        }
+    }
+
+    return maxVal;
 }
 
 GameSolver.prototype.freeSpaces = function (grid) {
