@@ -20,33 +20,53 @@ GameSolver.prototype.solve = function () {
 // Calculate for the next best move
 GameSolver.prototype.nextMove = function (grid) {
     var paths = [];
-    paths.push({grid: this.move(grid, UP), action: UP});
-    paths.push({grid: this.move(grid, RIGHT), action: RIGHT});
-    paths.push({grid: this.move(grid, DOWN), action: DOWN});
-    paths.push({grid: this.move(grid, LEFT), action: LEFT});
+    var actions = [UP, RIGHT, DOWN, LEFT];
+
+    for (var i=0; i<actions.length; i++) {
+        var newGrid =  this.move(grid, actions[i]);
+        if (!this.equalGrid(grid, newGrid))
+            paths.push({grid: newGrid, action: actions[i]});
+    }
 
     for (var i=1; i<=this.searchDepth; i++) {
-        var length = Math.pow(4,i);
+        var length = paths.length;
         for (var j=0; j<length; j++) {
             var path = paths.shift();
-            paths.push({grid: this.move(path.grid, UP), action: path.action});
-            paths.push({grid: this.move(path.grid, RIGHT), action: path.action});
-            paths.push({grid: this.move(path.grid, DOWN), action: path.action});
-            paths.push({grid: this.move(path.grid, LEFT), action: path.action});
+            for (var k=0; k<actions.length; k++) {
+                var newGrid =  this.move(path.grid, actions[k]);
+                paths.push({grid: newGrid, action: path.action});
+            }
         }
     }
 
-    paths = _.shuffle(paths);
-    var max = this.findBest(paths);
+    var action = this.findBest(paths);
 
-    return max.action;
+    return action;
 }
 
 GameSolver.prototype.findBest = function (paths) {
-    var self = this;
-    return _.max(paths, function(p) {
-        return self.freeSpaces(p.grid);
+    paths = _.shuffle(paths);
+
+    var pathGroups = _.groupBy(paths, function (p) {
+        return p.action;
     });
+    
+    var maxAction = -1;
+    var maxFreeSpace = -1;
+    for (var action in pathGroups) {
+        var group = pathGroups[action];
+        var freeSpace = 0;
+        for (var j=0; j<group.length; j++) {
+            freeSpace += this.freeSpaces(group[j].grid);
+        }
+
+        if (freeSpace > maxFreeSpace) {
+            maxFreeSpace = freeSpace;
+            maxAction = parseInt(action);
+        }
+    }
+    
+    return maxAction;
 }
 
 GameSolver.prototype.freeSpaces = function (grid) {
@@ -61,6 +81,29 @@ GameSolver.prototype.freeSpaces = function (grid) {
     }
 
     return space;    
+}
+
+GameSolver.prototype.equalGrid = function (g1, g2) {
+    var equal = true;
+
+    for (var i=0; i<g1.length; i++) {
+        for (var j=0; j<g1.length; j++) {
+            if ((g1[i][j]==null && g2[i][j]!=null) || (g1[i][j]!=null && g2[i][j]==null)) {
+                equal = false;
+                break;
+            }
+            else if (g1[i][j]!=null && g2[i][j]!=null) {
+                if (g1[i][j].value!=g2[i][j].value
+                || g1[i][j].position.x!=g2[i][j].position.x
+                || g1[i][j].position.y!=g2[i][j].position.y) {
+                    equal = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    return equal;
 }
 
 GameSolver.prototype.cloneGrid = function (grid) {
