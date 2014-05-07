@@ -39,9 +39,7 @@ GameSolver.prototype.nextMove = function (grid) {
         }
     }
 
-    var action = this.findBest(paths);
-
-    return action;
+    return this.findBest(paths);
 }
 
 GameSolver.prototype.findBest = function (paths) {
@@ -57,7 +55,7 @@ GameSolver.prototype.findBest = function (paths) {
         var group = pathGroups[action];
         var score = 0;
         for (var j=0; j<group.length; j++) {
-            score += this.freeSpaces(group[j].grid) / 16 + this.maxValue(group[j].grid) / 2048;
+            score += this.getScore(group[j].grid);
         }
 
         if (score > maxScore) {
@@ -67,6 +65,23 @@ GameSolver.prototype.findBest = function (paths) {
     }
     
     return maxAction;
+}
+
+GameSolver.prototype.getScore = function (grid) {
+    var valScore = 0;
+    var spaceScore = 0;
+    for (var i=0; i<grid.length; i++) {
+        var col = grid[i];
+        for (var j=0; j<col.length; j++) {
+            if (col[j] != null)
+                valScore += col[j].value / 2048;
+            else
+                spaceScore += 1 / 16;
+
+        }
+    }
+
+    return spaceScore / valScore;
 }
 
 GameSolver.prototype.maxValue = function (grid) {
