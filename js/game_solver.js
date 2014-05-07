@@ -14,18 +14,19 @@ GameSolver.prototype.solve = function () {
     window.setInterval(function() {
         var grid = self.gameManager.grid.serialize();
         self.gameManager.move(self.nextMove(grid.cells));
-    }, 100);
+    }, 200);
 }
 
 // Calculate for the next best move
 GameSolver.prototype.nextMove = function (grid) {
     var paths = [];
+    var allPaths = [];
     var actions = [UP, RIGHT, DOWN, LEFT];
 
     for (var i=0; i<actions.length; i++) {
         var newGrid =  this.move(grid, actions[i]);
         if (!this.equalGrid(grid, newGrid))
-            paths.push({grid: newGrid, action: actions[i]});
+            paths.push({grid: newGrid, action: [actions[i]]});
     }
 
     for (var i=1; i<=this.searchDepth; i++) {
@@ -33,20 +34,25 @@ GameSolver.prototype.nextMove = function (grid) {
         for (var j=0; j<length; j++) {
             var path = paths.shift();
             for (var k=0; k<actions.length; k++) {
+                var newActions = _.clone(path.action);
+                newActions.push(actions[k]);
                 var newGrid =  this.move(path.grid, actions[k]);
-                paths.push({grid: newGrid, action: path.action});
+                paths.push({grid: newGrid, action: newActions});
             }
+            allPaths.push(path);
         }
     }
 
-    return this.findBest(paths);
+    for (var i=0; i<paths.length; i++) {
+        allPaths.push(paths[i]);
+    }
+
+    return this.findBest(allPaths);
 }
 
 GameSolver.prototype.findBest = function (paths) {
-    paths = _.shuffle(paths);
-
     var pathGroups = _.groupBy(paths, function (p) {
-        return p.action;
+        return _.first(p.action);
     });
     
     var maxAction = -1;
@@ -55,7 +61,9 @@ GameSolver.prototype.findBest = function (paths) {
         var group = pathGroups[action];
         var score = 0;
         for (var j=0; j<group.length; j++) {
-            score += this.getScore(group[j].grid);
+            score += this.getScore(group[j].grid) / Math.pow(2, group[j].action.length);
+            var lastAction = group[j].action[group[j].action.length-1];
+/*             if (lastAction == RIGHT) score++; */
         }
 
         if (score > maxScore) {
@@ -69,19 +77,27 @@ GameSolver.prototype.findBest = function (paths) {
 
 GameSolver.prototype.getScore = function (grid) {
     var valScore = 0;
+    var diffScore = 0;
     var spaceScore = 0;
+
+    var maxVal = this.maxValue(grid);
+
     for (var i=0; i<grid.length; i++) {
         var col = grid[i];
         for (var j=0; j<col.length; j++) {
-            if (col[j] != null)
-                valScore += col[j].value / 2048;
+            if (col[j] != null) {
+                valScore += col[j].value;
+                diffScore += Math.pow(maxVal - col[j].value, 2);
+            }
             else
-                spaceScore += 1 / 16;
+                spaceScore += 1;
 
         }
     }
 
-    return spaceScore / valScore;
+    spaceScore = Math.pow(2, spaceScore);
+    diffScore = Math.sqrt(diffScore);
+    return spaceScore * diffScore;
 }
 
 GameSolver.prototype.maxValue = function (grid) {
