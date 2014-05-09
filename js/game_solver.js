@@ -63,7 +63,7 @@ GameSolver.prototype.findBest = function (paths) {
         for (var j=0; j<group.length; j++) {
             score += this.getScore(group[j].grid) / Math.pow(2, group[j].action.length);
             var lastAction = group[j].action[group[j].action.length-1];
-/*             if (lastAction == RIGHT) score++; */
+            if (lastAction == RIGHT) score++;
         }
 
         if (score > maxScore) {
@@ -86,7 +86,7 @@ GameSolver.prototype.getScore = function (grid) {
         var col = grid[i];
         for (var j=0; j<col.length; j++) {
             if (col[j] != null) {
-                valScore += col[j].value;
+                valScore += (col[j].position.x) * col[j].value;
                 diffScore += Math.pow(maxVal - col[j].value, 2);
             }
             else
@@ -97,7 +97,7 @@ GameSolver.prototype.getScore = function (grid) {
 
     spaceScore = Math.pow(2, spaceScore);
     diffScore = Math.sqrt(diffScore);
-    return spaceScore * diffScore;
+    return spaceScore * (valScore * diffScore);
 }
 
 GameSolver.prototype.maxValue = function (grid) {
